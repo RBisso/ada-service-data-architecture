@@ -33,7 +33,7 @@ Repo **Settings > Secrets and variables > Actions** — two secrets required bef
 | 0 | Scaffolding (folder structure, git init, .gitignore, README) | Done |
 | 1 | Backend API (Java 26 Products CRUD) | Done |
 | 2 | Frontend (HTML/JS) | Done |
-| 3 | Reverse proxy (Nginx) | Pending |
+| 3 | Reverse proxy (Nginx) | Done |
 | 4 | docker-compose.yml orchestration | Pending |
 | 5 | Data ecosystem (MovieFlix: datalake, ETL, SQL) | Pending |
 | 6 | CI/CD (GitHub Actions) | Pending |
@@ -80,3 +80,11 @@ Repo **Settings > Secrets and variables > Actions** — two secrets required bef
   - `frontend/Dockerfile` — `nginx:alpine` serving static HTML on port 80
   - Frontend calls `/api/products` (relative path); integration with backend through Nginx reverse proxy (Phase 3)
   - **Test script:** `scripts/phase-2-test.ps1` — compiles backend, builds frontend Docker image, verifies nginx serves HTML, verifies backend CRUD. All tests passed.
+
+- **Phase 3 completed:**
+  - `nginx/nginx.conf` — reverse proxy: `/` → frontend:80, `/api/` → backend:8080, `/health` → backend:8080/health
+  - `nginx/Dockerfile` — `nginx:alpine` with custom config
+  - **Key learning:** Alpine's musl DNS resolver doesn't work with Docker Desktop's embedded DNS (127.0.0.11) on Windows. Fixed by using variables in `proxy_pass` (e.g. `set $backend_api http://backend:8080; proxy_pass $backend_api;`) which defers DNS resolution to request time.
+  - **Key learning:** When `proxy_pass` uses a variable, nginx does NOT rewrite the URI — it appends the full original request URI. So `location /api/` + `proxy_pass $var/api/` doubles the path. Fix: use `proxy_pass $var;` without the trailing `/api/`.
+  - `scripts/test-proxy/docker-compose.test.yml` — compose file for testing all services (db_oltp, backend, frontend, proxy)
+  - **Test script:** `scripts/phase-3-test.ps1` — runs all services via Docker Compose, tests all CRUD endpoints through proxy on port 80. All tests passed.

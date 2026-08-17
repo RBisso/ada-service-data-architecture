@@ -1,5 +1,5 @@
 services:
-  db:
+  db_oltp:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: app_user
@@ -15,25 +15,23 @@ services:
   backend:
     build: ../../backend
     environment:
-      DB_HOST: db
+      DB_HOST: db_oltp
       DB_PORT: "5432"
       DB_USER: app_user
       DB_PASSWORD: app_pass
       DB_NAME: products_db
       PORT: "8080"
     depends_on:
-      db:
+      db_oltp:
         condition: service_healthy
 
   frontend:
     build: ../../frontend
 
   proxy:
-    image: nginx:alpine
+    build: ../../nginx
     ports:
       - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - frontend
       - backend
