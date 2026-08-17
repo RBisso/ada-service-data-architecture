@@ -4,6 +4,7 @@
 out/
 target/
 .kotlin
+lib/
 
 ### Build artifacts ###
 backend/lib/

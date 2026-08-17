@@ -1,7 +1,8 @@
 FROM eclipse-temurin:26-jdk AS build
 WORKDIR /app
 
-RUN mkdir -p lib && \
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/* && \
+    mkdir -p lib && \
     curl -L -o lib/postgresql.jar \
     https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar
 
