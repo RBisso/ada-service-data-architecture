@@ -32,7 +32,7 @@ Repo **Settings > Secrets and variables > Actions** — two secrets required bef
 |-------|-------------|--------|
 | 0 | Scaffolding (folder structure, git init, .gitignore, README) | Done |
 | 1 | Backend API (Java 26 Products CRUD) | Done |
-| 2 | Frontend (HTML/JS) | Pending |
+| 2 | Frontend (HTML/JS) | Done |
 | 3 | Reverse proxy (Nginx) | Pending |
 | 4 | docker-compose.yml orchestration | Pending |
 | 5 | Data ecosystem (MovieFlix: datalake, ETL, SQL) | Pending |
@@ -74,3 +74,9 @@ Repo **Settings > Secrets and variables > Actions** — two secrets required bef
   - **Compilation fix:** `ProductHandler` methods needed `throws Exception` (not just `throws IOException`) since `ProductRepository` throws `SQLException` (checked)
   - **Testing note on Windows:** `curl -d '{"name":"X"}'` sends mangled JSON due to PowerShell quoting; use `Set-Content` + `curl -d "@file"` instead
   - **Test script:** `scripts/phase-1-test.ps1` — starts PostgreSQL, compiles, runs server, tests all 6 endpoints, cleans up. All tests passed.
+
+- **Phase 2 completed:**
+  - `frontend/index.html` — single-page UI: product table (list/add/edit/delete), vanilla HTML/CSS/JS, calls `GET/POST/PUT/DELETE /api/products`
+  - `frontend/Dockerfile` — `nginx:alpine` serving static HTML on port 80
+  - Frontend calls `/api/products` (relative path); integration with backend through Nginx reverse proxy (Phase 3)
+  - **Test script:** `scripts/phase-2-test.ps1` — compiles backend, builds frontend Docker image, verifies nginx serves HTML, verifies backend CRUD. All tests passed.

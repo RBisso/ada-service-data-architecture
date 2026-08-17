@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products Manager</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+        .container { max-width: 700px; margin: 40px auto; padding: 0 20px; }
+        h1 { text-align: center; margin-bottom: 30px; color: #2c3e50; }
+        .card { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 24px; margin-bottom: 20px; }
+        .card h2 { font-size: 16px; color: #666; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+        .form-row { display: flex; gap: 10px; }
+        .form-row input { flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .form-row input:focus { outline: none; border-color: #3498db; }
+        button { padding: 10px 18px; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; font-weight: 500; }
+        .btn-primary { background: #3498db; color: #fff; }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-save { background: #27ae60; color: #fff; }
+        .btn-save:hover { background: #219a52; }
+        .btn-cancel { background: #95a5a6; color: #fff; }
+        .btn-cancel:hover { background: #7f8c8d; }
+        .btn-edit { background: #f39c12; color: #fff; padding: 6px 12px; font-size: 13px; }
+        .btn-edit:hover { background: #e67e22; }
+        .btn-delete { background: #e74c3c; color: #fff; padding: 6px 12px; font-size: 13px; }
+        .btn-delete:hover { background: #c0392b; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+        th { color: #999; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        td { font-size: 14px; }
+        .actions { display: flex; gap: 6px; justify-content: flex-end; }
+        .empty { text-align: center; color: #999; padding: 20px; font-size: 14px; }
+        .error { color: #e74c3c; font-size: 13px; margin-top: 8px; display: none; }
+        .edit-input { padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Products Manager</h1>
+
+        <div class="card">
+            <h2>Add Product</h2>
+            <div class="form-row">
+                <input type="text" id="newName" placeholder="Product name" maxlength="50">
+                <button class="btn-primary" onclick="addProduct()">Add</button>
+            </div>
+            <div class="error" id="addError"></div>
+        </div>
+
+        <div class="card">
+            <h2>Products</h2>
+            <div id="productList"></div>
+        </div>
+    </div>
+
+    <script>
+        const API = '/api/products';
+        let products = [];
+
+        async function loadProducts() {
+            try {
+                const res = await fetch(API);
+                products = await res.json();
+                render();
+            } catch (e) {
+                document.getElementById('productList').innerHTML = '<div class="empty">Failed to load products</div>';
+            }
+        }
+
+        function render() {
+            const list = document.getElementById('productList');
+            if (products.length === 0) {
+                list.innerHTML = '<div class="empty">No products yet</div>';
+                return;
+            }
+            list.innerHTML = '<table><thead><tr><th>ID</th><th>Name</th><th></th></tr></thead><tbody>' +
+                products.map(p => `<tr id="row-${p.id}">
+                    <td>${p.id}</td>
+                    <td id="name-${p.id}">${escapeHtml(p.name)}</td>
+                    <td class="actions">
+                        <button class="btn-edit" onclick="startEdit(${p.id}, '${escapeJs(p.name)}')">Edit</button>
+                        <button class="btn-delete" onclick="deleteProduct(${p.id})">Delete</button>
+                    </td>
+                </tr>`).join('') + '</tbody></table>';
+        }
+
+        async function addProduct() {
+            const input = document.getElementById('newName');
+            const err = document.getElementById('addError');
+            const name = input.value.trim();
+            if (!name) { err.textContent = 'Name is required'; err.style.display = 'block'; return; }
+            err.style.display = 'none';
+            try {
+                const res = await fetch(API, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+                if (res.ok) { input.value = ''; await loadProducts(); }
+                else { const d = await res.json(); err.textContent = d.error; err.style.display = 'block'; }
+            } catch (e) { err.textContent = 'Request failed'; err.style.display = 'block'; }
+        }
+
+        function startEdit(id, name) {
+            const row = document.getElementById('row-' + id);
+            const nameCell = document.getElementById('name-' + id);
+            const actionsCell = row.querySelector('.actions');
+            nameCell.innerHTML = `<input class="edit-input" id="edit-${id}" value="${escapeHtml(name)}" maxlength="50">`;
+            actionsCell.innerHTML = `<button class="btn-save" onclick="saveEdit(${id})">Save</button>
+                <button class="btn-cancel" onclick="loadProducts()">Cancel</button>`;
+            document.getElementById('edit-' + id).focus();
+        }
+
+        async function saveEdit(id) {
+            const input = document.getElementById('edit-' + id);
+            const name = input.value.trim();
+            if (!name) { input.style.borderColor = '#e74c3c'; return; }
+            try {
+                const res = await fetch(API + '/' + id, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+                if (res.ok) await loadProducts();
+            } catch (e) { }
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm('Delete this product?')) return;
+            try {
+                await fetch(API + '/' + id, { method: 'DELETE' });
+                await loadProducts();
+            } catch (e) { }
+        }
+
+        function escapeHtml(s) {
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function escapeJs(s) {
+            return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        }
+
+        document.getElementById('newName').addEventListener('keydown', e => { if (e.key === 'Enter') addProduct(); });
+
+        loadProducts();
+    </script>
+</body>
+</html>
