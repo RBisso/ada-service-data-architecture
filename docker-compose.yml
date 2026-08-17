@@ -1,0 +1,57 @@
+services:
+  proxy:
+    build: ./nginx
+    container_name: reverse_proxy
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-network
+
+  frontend:
+    build: ./frontend
+    container_name: web_frontend
+    networks:
+      - app-network
+
+  backend:
+    build: ./backend
+    container_name: api_backend
+    environment:
+      - DB_HOST=db_oltp
+      - DB_USER=app_user
+      - DB_PASSWORD=app_pass
+      - DB_NAME=products_db
+      - DB_PORT=5432
+    depends_on:
+      db_oltp:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  db_oltp:
+    image: postgres:15-alpine
+    container_name: db_oltp
+    environment:
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: app_pass
+      POSTGRES_DB: products_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - oltp_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app_user -d products_db"]
+      interval: 2s
+      retries: 10
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  oltp_data:
