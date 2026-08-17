@@ -21,6 +21,7 @@ End-to-end ecosystem with two areas:
 |   +-- datalake/            # Raw CSV files (movies, users, ratings)
 |   +-- etl/                 # Python load scripts
 |   +-- sql/                 # DW schema, data marts, analytics queries
++-- scripts/                 # Phase test scripts (PowerShell)
 +-- docker-compose.yml
 +-- README.md
 ```
@@ -32,8 +33,10 @@ End-to-end ecosystem with two areas:
 ## Deliverables
 
 - [x] Phase 0: Project scaffolding
-- [ ] Part 1: Service & Application Architecture (Products CRUD)
-- [ ] Part 2: CI/CD Pipeline and Container Management
-- [ ] Part 3: Data Ecosystem - MovieFlix
-- [ ] Part 4: Analytical Queries
-- [ ] Part 5: Bonus - DNS
+- [x] Phase 1: Backend API (Java 26 Products CRUD)
+- [ ] Phase 2: Frontend (HTML/JS)
+- [ ] Phase 3: Reverse proxy (Nginx)
+- [ ] Phase 4: docker-compose.yml orchestration
+- [ ] Phase 5: Data ecosystem (MovieFlix)
+- [ ] Phase 6: CI/CD (GitHub Actions)
+- [ ] Phase 7: DNS bonus + final README
