@@ -5,6 +5,9 @@ out/
 target/
 .kotlin
 
+### Build artifacts ###
+backend/lib/
+
 ### Eclipse ###
 .apt_generated
 .classpath
@@ -36,3 +39,12 @@ venv/
 
 ### Mac OS ###
 .DS_Store
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
