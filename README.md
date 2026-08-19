@@ -36,7 +36,7 @@ End-to-end ecosystem with two areas:
 - [x] Phase 1: Backend API (Java 26 Products CRUD)
 - [x] Phase 2: Frontend (HTML/JS)
 - [x] Phase 3: Reverse proxy (Nginx)
-- [ ] Phase 4: docker-compose.yml orchestration
+- [x] Phase 4: docker-compose.yml orchestration
 - [ ] Phase 5: Data ecosystem (MovieFlix)
 - [ ] Phase 6: CI/CD (GitHub Actions)
 - [ ] Phase 7: DNS bonus + final README
