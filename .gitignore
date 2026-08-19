@@ -49,3 +49,7 @@ venv/
 *.zip
 *.tar.gz
 *.rar
+
+### Local bash test scripts (Linux-only, not committed) ###
+scripts/phase-4-test.sh
+scripts/phase-4-test-manual.sh

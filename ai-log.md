@@ -34,7 +34,7 @@ Repo **Settings > Secrets and variables > Actions** — two secrets required bef
 | 1 | Backend API (Java 26 Products CRUD) | Done |
 | 2 | Frontend (HTML/JS) | Done |
 | 3 | Reverse proxy (Nginx) | Done |
-| 4 | docker-compose.yml orchestration | Pending |
+| 4 | docker-compose.yml orchestration | Done |
 | 5 | Data ecosystem (MovieFlix: datalake, ETL, SQL) | Pending |
 | 6 | CI/CD (GitHub Actions) | Pending |
 | 7 | DNS bonus + final README | Pending |
@@ -88,3 +88,13 @@ Repo **Settings > Secrets and variables > Actions** — two secrets required bef
   - **Key learning:** When `proxy_pass` uses a variable, nginx does NOT rewrite the URI — it appends the full original request URI. So `location /api/` + `proxy_pass $var/api/` doubles the path. Fix: use `proxy_pass $var;` without the trailing `/api/`.
   - `scripts/test-proxy/docker-compose.test.yml` — compose file for testing all services (db_oltp, backend, frontend, proxy)
   - **Test script:** `scripts/phase-3-test.ps1` — runs all services via Docker Compose, tests all CRUD endpoints through proxy on port 80. All tests passed.
+
+### Session 4 - 2026-08-19
+
+- **Phase 4 completed:**
+  - Finalized root `docker-compose.yml` (4 CRUD services): added `healthcheck` to `backend` (`wget -qO- http://localhost:8080/health`), `proxy` now waits on `backend` via `condition: service_healthy`, added `restart: unless-stopped` to all services, quoted env values for consistency.
+  - Verified `wget` is present in `eclipse-temurin:26-jre-alpine` (BusyBox v1.37.0).
+  - `db_dw` (analytical DB) intentionally left out — belongs to Phase 5 (data ecosystem).
+  - Omitted `version:` key (Compose v2 no longer needs it; avoids deprecation warning).
+  - **Test scripts:** `scripts/phase-4-test.ps1` (asserts 4 containers running, verifies network + volume exist, smoke-tests CRUD + frontend through proxy) and `scripts/phase-4-test-manual.ps1`.
+  - README checklist updated (Phase 4 marked done).

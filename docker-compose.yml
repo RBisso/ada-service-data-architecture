@@ -5,14 +5,18 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - frontend
-      - backend
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - app-network
 
   frontend:
     build: ./frontend
     container_name: web_frontend
+    restart: unless-stopped
     networks:
       - app-network
 
@@ -21,13 +25,21 @@ services:
     container_name: api_backend
     environment:
       - DB_HOST=db_oltp
+      - DB_PORT=5432
       - DB_USER=app_user
       - DB_PASSWORD=app_pass
       - DB_NAME=products_db
-      - DB_PORT=5432
+      - PORT=8080
     depends_on:
       db_oltp:
         condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
     networks:
       - app-network
 
@@ -46,6 +58,7 @@ services:
       test: ["CMD-SHELL", "pg_isready -U app_user -d products_db"]
       interval: 2s
       retries: 10
+    restart: unless-stopped
     networks:
       - app-network
 
