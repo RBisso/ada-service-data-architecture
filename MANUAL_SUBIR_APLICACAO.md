@@ -97,6 +97,8 @@ http://localhost
 - Aplicacao web: `http://localhost`
 - Health check: `http://localhost/health`
 - API de produtos: `http://localhost/api/products`
+- OpenAPI JSON: `http://localhost/openapi.json`
+- Swagger UI: `http://localhost/swagger`
 - PostgreSQL local: `localhost:5432`
 
 ## Como parar a aplicacao

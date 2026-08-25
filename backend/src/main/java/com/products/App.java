@@ -1,10 +1,12 @@
 package com.products;
 
 import com.products.handler.ProductHandler;
+import com.products.handler.StaticResourceHandler;
 import com.products.repository.ProductRepository;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 
 public class App {
     public static void main(String[] args) throws Exception {
@@ -26,6 +28,22 @@ public class App {
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/api/products", new ProductHandler());
+        server.createContext(
+            "/openapi.json",
+            new StaticResourceHandler(
+                Set.of("/openapi.json"),
+                "/docs/openapi.json",
+                "application/json; charset=UTF-8"
+            )
+        );
+        server.createContext(
+            "/swagger",
+            new StaticResourceHandler(
+                Set.of("/swagger", "/swagger/"),
+                "/docs/swagger/index.html",
+                "text/html; charset=UTF-8"
+            )
+        );
         server.createContext("/health", exchange -> {
             String response = "{\"status\":\"ok\"}";
             byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
