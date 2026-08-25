@@ -1,63 +1,50 @@
-# ADA - Service and Data Architecture
+# ADA - Arquitetura de Serviços e Dados
 
-Final project integrating **Service Architecture** (Docker, Docker Compose, Nginx, CI/CD, DNS) and **Data Architecture** (Data Lake, Data Warehouse, Data Mart, SQL).
+Projeto final integrando **Arquitetura de Serviços** (Docker, Docker Compose, Nginx, CI/CD, DNS) e **Arquitetura de Dados** (Data Lake, Data Warehouse, Data Mart, SQL)
 
 ## Overview
 
-End-to-end ecosystem with two areas:
+Ecossistema end-to-end contendo duas áreas:
 
-1. **Products CRUD application** - Nginx reverse proxy + HTML/JS frontend + Java 26 REST API + PostgreSQL (OLTP).
-2. **MovieFlix data ecosystem** - 3-layer architecture: Data Lake (CSV) -> Data Warehouse (PostgreSQL) -> Data Marts (SQL views) with analytical queries.
+1. **CRUD de produtos** - Proxy reverso Nginx + frontend HTML/JS + API REST Java + PostgreSQL (OLTP).
+2. **Ecossistema de dados MovieFlix** - Arquitetura 3-layer: Data Lake (CSV) -> Data Warehouse (PostgreSQL) -> (SQL views) com queries analíticas.
 
-## Architecture
+## Arquitetura
 
-### Current (Phases 0-4)
+### CRUD de Produtos
+```mermaid
+flowchart TD
+    A[Client / Browser] --> B[Reverse Proxy<br/>Nginx<br/>Port 80]
 
-```
-[ Client / Browser ]
-          |
-          v
-  [ Reverse Proxy ]  (Nginx) - Port 80
-          |
-          +---> [ Web Server / Frontend ]  (HTML/JS - nginx:alpine)
-          |
-          +---> [ Application Server / API ]  (Java 26 - HttpServer + JDBC)
-                        |
-                        v
-                [ OLTP Database ]  (PostgreSQL 15)
+    B --> C[Web Server / Frontend<br/>HTML/JS<br/>nginx:alpine]
+    B --> D[Application Server / API<br/>Java 26<br/>HttpServer + JDBC]
+
+    D --> E[OLTP Database<br/>PostgreSQL 15]
 ```
 
-### Final (after Phase 5)
+### Ecossistema de dados + CRUD de Produtos
 
-```
-[ Client / Browser ]
-          |
-          v
-  [ Reverse Proxy ]  (Nginx) - Port 80
-          |
-          +---> [ Web Server / Frontend ]  (HTML/JS)
-          |
-          +---> [ Application Server / API ]  (Java 26)
-          |           |
-          |           v
-          |   [ OLTP Database ]  (PostgreSQL 15)
-          |
-          +---> [ Data Lake ]  (CSV: movies, users, ratings)
-          |           |
-          |           v
-          |   [ Python ETL ]  (load_dw.py)
-          |           |
-          |           v
-          |   [ Data Warehouse ]  (PostgreSQL 15)
-          |           |
-          |           v
-          |   [ Data Marts ]  (SQL Views)
-          |           |
-          |           v
-          |   [ Analytical Queries ]  (Business insights)
+```mermaid
+flowchart TD
+    A[Client / Browser] --> B[Reverse Proxy<br/>Nginx]
+
+    B --> C[Frontend<br/>HTML/JS]
+    B --> D[API<br/>Java 26]
+
+    subgraph OLTP
+        D --> E[(PostgreSQL 15)]
+    end
+
+    B --> F[Data Lake<br/>CSV Files]
+
+    subgraph Analytics
+        F --> G[Python ETL<br/>load_dw.py]
+        G --> H[(Data Warehouse<br/>PostgreSQL 15)]
+        H --> I[Data Marts<br/>SQL Views]
+    end
 ```
 
-## Tech Stack
+## Stack de Desenvolvimento
 
 | Component | Technology |
 |-----------|-----------|
@@ -70,38 +57,65 @@ End-to-end ecosystem with two areas:
 | Orchestration | Docker Compose |
 | CI/CD | GitHub Actions |
 
-## Repository Structure
 
-```text
+## Estrutura do Repositório
+
+```
 .
-+-- .github/workflows/       # CI/CD pipeline
-+-- nginx/                   # Reverse proxy (Dockerfile + nginx.conf)
-+-- frontend/                # HTML/JS web interface (Dockerfile + index.html)
-+-- backend/                 # Java 26 REST API (Dockerfile + source code)
-|   +-- src/main/java/       # Java source (com.products.*)
-|   +-- src/main/resources/  # SQL init scripts
-+-- data-ecosystem/
-|   +-- datalake/            # Raw CSV files (movies, users, ratings)
-|   +-- etl/                 # Python load scripts
-|   +-- sql/                 # DW schema, data marts, analytics queries
-+-- scripts/                 # Phase test scripts (PowerShell)
-+-- docker-compose.yml       # Orchestration (all services)
-+-- README.md
+├── .github/
+│   └── workflows/              # CI/CD pipeline
+│
+├── nginx/                      # Reverse proxy
+│   ├── Dockerfile
+│   └── nginx.conf
+│
+├── frontend/                   # HTML/JS web interface
+│   ├── Dockerfile
+│   └── index.html
+│
+├── backend/                    # Java 26 REST API
+│   ├── Dockerfile
+│   └── src/
+│       └── main/
+│           ├── java/
+│           │   └── com/products/*
+│           └── resources/
+│               └── SQL init scripts
+│
+├── data-ecosystem/
+│   ├── datalake/
+│   │   ├── movies.csv
+│   │   ├── users.csv
+│   │   └── ratings.csv
+│   │
+│   ├── etl/
+│   │   └── load_dw.py
+│   │
+│   └── sql/
+│       ├── dw-schema.sql
+│       ├── data-marts.sql
+│       └── analytics-queries.sql
+│
+├── scripts/                    # PowerShell test scripts
+│
+├── docker-compose.yml          # Service orchestration
+└── README.md
 ```
 
 ## Getting Started
 
-### Prerequisites
+### Pré-requisitos
 
-- Docker and Docker Compose
+- Docker e Docker Compose
+- Java 26
+- PostgreSQL 15
 
-### Run
-
+### Execução - Docker Compose
 ```bash
 docker compose up -d --build
 ```
 
-The application will be available at:
+Esta aplicação vai estar disponível em:
 
 | Service | URL |
 |---------|-----|
@@ -109,13 +123,14 @@ The application will be available at:
 | Health check | http://localhost/health |
 | OLTP Database | localhost:5432 |
 
-### Stop
+### Para execução
 
 ```bash
 docker compose down -v
 ```
 
-## API Endpoints
+## Enpoints da API
+
 
 | Method | Endpoint | Description | Status Code |
 |--------|----------|-------------|-------------|
@@ -126,45 +141,44 @@ docker compose down -v
 | `DELETE` | `/api/products/{id}` | Delete a product | 204 / 404 |
 | `GET` | `/health` | Health check | 200 |
 
-### Request/Response examples
-
-**Create product:**
+### Exemplos de Request/Response
+**Criar produto:**
 ```bash
 curl -X POST http://localhost/api/products \
   -H "Content-Type: application/json" \
   -d '{"name": "Notebook"}'
 ```
-Response: `{"id":1,"name":"Notebook"}`
+Resposta: `{"id":1,"name":"Notebook"}`
 
-**List all products:**
+**Listar todos os produtos:**
 ```bash
 curl http://localhost/api/products
 ```
 Response: `[{"id":1,"name":"Notebook"},{"id":2,"name":"Mouse"}]`
 
-## Test Scripts
+## Scripts de Teste
 
-Automated and manual test scripts are in the `scripts/` folder. All scripts handle setup, testing, and cleanup automatically.
+Scripts de testes manuais e automatizados podem ser encontrados na pasta `scripts/`. Todos os scripts gerenciam setup, teste e cleanup.
 
-### Phase 1 — Backend API
+### Fase 1 — Backend API
 
-Compiles and runs the Java backend locally against a PostgreSQL Docker container. Tests all CRUD endpoints (`GET`, `POST`, `PUT`, `DELETE`) and the health check directly on port 8080.
+Compila e roda o backend em java localmente com um container Docker PostgreSQL. Testa todos os endpoints (`GET`, `POST`, `PUT`, `DELETE`) e o health check diretamente na porta 8080.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\phase-1-test.ps1
 ```
 
-### Phase 2 — Backend + Frontend
+### Fase 2 — Backend + Frontend
 
-Same as Phase 1, plus builds the frontend Docker image and verifies that nginx serves the HTML page correctly. Tests backend and frontend independently (no reverse proxy).
+Continua a fase 1, adicionando o container do frontend e verifica que o servidor Nginx serve corretamente a pagina HTML. Testa o banckend e frontend de forma separada, sem proxy reverso.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\phase-2-test.ps1
 ```
 
-### Phase 3 — Full Integration
+### Fase 3 — Integração Completa
 
-Runs all services via Docker Compose (proxy, frontend, backend, PostgreSQL). Tests all CRUD endpoints through the Nginx reverse proxy on port 80.
+Executa todos os serviços via Docker Compose (proxy, frontend, backend, PostgreSQL). Testa todos os endpoints do CRUD através do proxy reverso na porta 80.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\phase-3-test.ps1
@@ -172,7 +186,7 @@ powershell -ExecutionPolicy Bypass -File scripts\phase-3-test.ps1
 
 ### Manual tests (browser)
 
-Starts all services and opens the app at http://localhost for manual testing in the browser. Press any key in the terminal to stop and clean up.
+Inicializa todos os serviços e disponibiliza o serviço em http://localhost para fins de testes manuais no browser. Precione qualquer tecla no terminal para encerrar o processo e iniciar o processo de cleanup.
 
 ```powershell
 # Phase 2: Frontend only (backend local, frontend in Docker)
@@ -182,15 +196,11 @@ powershell -ExecutionPolicy Bypass -File scripts\phase-2-test-manual.ps1
 powershell -ExecutionPolicy Bypass -File scripts\phase-3-test-manual.ps1
 ```
 
-### Skip cleanup
+### Pular cleanup
 
-All automated scripts support `-SkipCleanup` to keep services running after tests:
+Todos os testes automatizados suportam `-SkipCleanup` para manter os serviços rodando depois dos testes:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\phase-3-test.ps1 -SkipCleanup
-```
-
-## Deliverables
+## Entregaveis
 
 - [x] Phase 0: Project scaffolding
 - [x] Phase 1: Backend API (Java 26 Products CRUD)
