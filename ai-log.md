@@ -35,7 +35,7 @@ Repo **Settings > Secrets and variables > Actions** — two secrets required bef
 | 2 | Frontend (HTML/JS) | Done |
 | 3 | Reverse proxy (Nginx) | Done |
 | 4 | docker-compose.yml orchestration | Done |
-| 5 | Data ecosystem (MovieFlix: datalake, ETL, SQL) | Pending |
+| 5 | Data ecosystem (MovieFlix: datalake, ETL, SQL) | Done |
 | 6 | CI/CD (GitHub Actions) | Pending |
 | 7 | DNS bonus + final README | Pending |
 
@@ -98,3 +98,16 @@ Repo **Settings > Secrets and variables > Actions** — two secrets required bef
   - Omitted `version:` key (Compose v2 no longer needs it; avoids deprecation warning).
   - **Test scripts:** `scripts/phase-4-test.ps1` (asserts 4 containers running, verifies network + volume exist, smoke-tests CRUD + frontend through proxy) and `scripts/phase-4-test-manual.ps1`.
   - README checklist updated (Phase 4 marked done).
+
+### Session 5 - 2026-08-25
+
+- **Phase 5 completed:**
+  - `data-ecosystem/datalake/` — synthetic MovieLens-style CSVs generated with a fixed seed for deterministic results: `movies.csv` (40 movies), `users.csv` (60 users, includes a synthetic `country` column to satisfy the "ratings by country" analysis), `ratings.csv` (1047 ratings).
+  - `data-ecosystem/sql/01_dw_schema.sql` — star schema: `dim_movies`, `dim_users`, `dim_genres`, `movie_genres` (bridge), `fact_ratings`.
+  - `data-ecosystem/sql/02_datamarts.sql` — 3 views: `v_top10_movies_by_genre`, `v_avg_rating_by_age_group`, `v_ratings_by_country`.
+  - `data-ecosystem/sql/03_analytics.sql` — 3 business queries (5 most popular movies, genre with highest avg rating, country that rates the most).
+  - `data-ecosystem/etl/load_dw.py` + `Dockerfile` — Python + psycopg2; runs schema, loads CSVs (parses year from title, splits genres into bridge tables), creates views, prints analytics results.
+  - `docker-compose.yml` — added `db_dw` (host port 5433) and one-shot `etl` service (`restart: "no"`, `depends_on: db_dw healthy`), plus `dw_data` volume.
+  - `scripts/phase-5-test.ps1` — asserts containers, DW row counts, view existence and analytical query results.
+  - **Decision:** `db_dw` uses host port `5433` because `5432` is taken by the OLTP DB (spec example had both on 5432).
+  - **Validated end-to-end:** ETL exit code 0; DW counts 40/60/13/1047; Query 1 top movie "Nixon" (34), Query 2 "Sci-Fi" (3.58), Query 3 "Brazil" (419).

@@ -4,12 +4,14 @@ Este documento descreve o passo a passo para iniciar a aplicacao localmente usan
 
 ## Visao Geral
 
-A aplicacao e composta por 4 servicos:
+A aplicacao e composta por 6 servicos:
 
 - `proxy`: Nginx responsavel por expor a aplicacao na porta `80`
 - `frontend`: interface web estatica
 - `backend`: API Java exposta internamente na porta `8080`
 - `db_oltp`: banco PostgreSQL exposto na porta `5432`
+- `db_dw`: Data Warehouse (PostgreSQL) exposto na porta `5433`
+- `etl`: job one-shot que carrega o Data Warehouse (executa e encerra)
 
 ## Pre-requisitos
 
@@ -19,6 +21,7 @@ Antes de iniciar, confirme que voce possui:
 - Docker Compose disponivel no terminal
 - Porta `80` livre
 - Porta `5432` livre
+- Porta `5433` livre
 
 Para validar:
 
@@ -59,6 +62,9 @@ O esperado e que os servicos abaixo estejam em execucao:
 - `web_frontend`
 - `api_backend`
 - `db_oltp`
+- `db_dw`
+
+O container `movieflix_etl` e um job one-shot: ele executa, carrega o Data Warehouse e encerra (status `Exited (0)`).
 
 ### 2. Validar o health check da aplicacao
 
@@ -99,7 +105,22 @@ http://localhost
 - API de produtos: `http://localhost/api/products`
 - OpenAPI JSON: `http://localhost/openapi.json`
 - Swagger UI: `http://localhost/swagger`
-- PostgreSQL local: `localhost:5432`
+- PostgreSQL local (OLTP): `localhost:5432`
+- Data Warehouse (MovieFlix): `localhost:5433`
+
+## Como validar o Data Warehouse
+
+Para verificar que o ETL carregou os dados corretamente:
+
+```bash
+docker logs movieflix_etl
+```
+
+Para consultar as views analiticas do MovieFlix:
+
+```bash
+docker exec db_dw psql -U dw_user -d movieflix_dw -c "SELECT * FROM v_ratings_by_country;"
+```
 
 ## Como parar a aplicacao
 

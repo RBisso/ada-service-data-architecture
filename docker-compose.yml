@@ -62,9 +62,51 @@ services:
     networks:
       - app-network
 
+  db_dw:
+    image: postgres:15-alpine
+    container_name: db_dw
+    environment:
+      POSTGRES_USER: dw_user
+      POSTGRES_PASSWORD: dw_pass
+      POSTGRES_DB: movieflix_dw
+    ports:
+      - "5433:5432"
+    volumes:
+      - dw_data:/var/lib/postgresql/data
+      - ./data-ecosystem/sql:/sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dw_user -d movieflix_dw"]
+      interval: 2s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  etl:
+    build: ./data-ecosystem/etl
+    container_name: movieflix_etl
+    environment:
+      - DB_HOST=db_dw
+      - DB_PORT=5432
+      - DB_USER=dw_user
+      - DB_PASSWORD=dw_pass
+      - DB_NAME=movieflix_dw
+      - DATALAKE_DIR=/datalake
+      - SQL_DIR=/sql
+    volumes:
+      - ./data-ecosystem/datalake:/datalake:ro
+      - ./data-ecosystem/sql:/sql:ro
+    depends_on:
+      db_dw:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
 
 volumes:
   oltp_data:
+  dw_data:
