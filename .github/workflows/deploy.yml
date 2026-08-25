@@ -23,16 +23,29 @@ jobs:
 
       - name: Configurar chave SSH
         shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          key = os.environ["SSH_PRIVATE_KEY"]
+          normalized_key = key.replace("\r\n", "\n").replace("\r", "\n").replace("\\n", "\n").strip() + "\n"
+
+          Path.home().joinpath(".ssh", "id_ed25519").write_text(normalized_key)
+          PY
+
           chmod 600 ~/.ssh/id_ed25519
+          ssh-keygen -y -f ~/.ssh/id_ed25519 > /dev/null
           ssh-keyscan -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts
 
       - name: Validar conexao SSH
         shell: bash
-        run: ssh "${DEPLOY_USER}@${DEPLOY_HOST}" "echo Conexao SSH validada com sucesso."
+        run: ssh -o StrictHostKeyChecking=yes "${DEPLOY_USER}@${DEPLOY_HOST}" "echo Conexao SSH validada com sucesso."
 
       - name: Sincronizar arquivos no servidor
         shell: bash
@@ -46,4 +59,4 @@ jobs:
       - name: Executar deploy remoto
         shell: bash
         run: |
-          ssh "${DEPLOY_USER}@${DEPLOY_HOST}" "chmod +x ${DEPLOY_PATH}/scripts/deploy_remote.sh && ${DEPLOY_PATH}/scripts/deploy_remote.sh"
+          ssh -o StrictHostKeyChecking=yes "${DEPLOY_USER}@${DEPLOY_HOST}" "chmod +x ${DEPLOY_PATH}/scripts/deploy_remote.sh && ${DEPLOY_PATH}/scripts/deploy_remote.sh"
