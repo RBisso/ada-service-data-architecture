@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - develop
 
 jobs:
   deploy:
@@ -45,7 +44,7 @@ jobs:
 
       - name: Validar conexao SSH
         shell: bash
-        run: ssh -o StrictHostKeyChecking=yes "${DEPLOY_USER}@${DEPLOY_HOST}" "echo Conexao SSH validada com sucesso."
+        run: ssh -o StrictHostKeyChecking=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "${DEPLOY_USER}@${DEPLOY_HOST}" "echo Conexao SSH validada com sucesso."
 
       - name: Sincronizar arquivos no servidor
         shell: bash
@@ -59,4 +58,4 @@ jobs:
       - name: Executar deploy remoto
         shell: bash
         run: |
-          ssh -o StrictHostKeyChecking=yes "${DEPLOY_USER}@${DEPLOY_HOST}" "chmod +x ${DEPLOY_PATH}/scripts/deploy_remote.sh && ${DEPLOY_PATH}/scripts/deploy_remote.sh"
+          ssh -o StrictHostKeyChecking=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "${DEPLOY_USER}@${DEPLOY_HOST}" "chmod +x ${DEPLOY_PATH}/scripts/deploy_remote.sh && ${DEPLOY_PATH}/scripts/deploy_remote.sh"
