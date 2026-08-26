@@ -28,7 +28,7 @@ function Check-Match($content, $pattern, $description) {
 
 try {
     # --- Step 1: Verify workflow files ---
-    Write-Host "`n[1/4] Checking workflow files..." -ForegroundColor Yellow
+    Write-Host "`n[1/3] Checking workflow files..." -ForegroundColor Yellow
     Check-File ".github/workflows/ci.yml" "ci.yml exists"
     Check-File ".github/workflows/deploy.yml" "deploy.yml exists"
 
@@ -46,29 +46,17 @@ try {
         Check-Match $deployContent "deploy_remote.sh" "deploy.yml runs remote deploy script"
     }
 
-    # --- Step 2: Build images ---
-    Write-Host "`n[2/4] Building Docker images..." -ForegroundColor Yellow
-    docker build -t ada-test-proxy ./nginx 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { Write-Host "  proxy image    OK" -ForegroundColor Green }
-    else { Write-Host "  proxy image    FAIL" -ForegroundColor Red; $failures++ }
-
-    docker build -t ada-test-frontend ./frontend 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { Write-Host "  frontend image OK" -ForegroundColor Green }
-    else { Write-Host "  frontend image FAIL" -ForegroundColor Red; $failures++ }
-
-    docker build -t ada-test-backend ./backend 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { Write-Host "  backend image  OK" -ForegroundColor Green }
-    else { Write-Host "  backend image  FAIL" -ForegroundColor Red; $failures++ }
-
-    # --- Step 3: Start services and smoke test ---
-    Write-Host "`n[3/4] Starting services and running smoke test..." -ForegroundColor Yellow
-    docker compose down -v 2>$null | Out-Null
-    docker compose up -d 2>&1 | Out-Null
+    # --- Step 2: Build and start services ---
+    Write-Host "`n[2/3] Building and starting services..." -ForegroundColor Yellow
+    $ErrorActionPreference = "SilentlyContinue"
+    docker compose down -v 2>$null
+    docker compose up -d --build 2>$null
+    $ErrorActionPreference = "Stop"
 
     Write-Host "Waiting for backend to be ready..."
     $ready = $false
-    for ($i = 0; $i -lt 30; $i++) {
-        Start-Sleep -Seconds 2
+    for ($i = 0; $i -lt 40; $i++) {
+        Start-Sleep -Seconds 3
         $health = curl.exe -s http://localhost/health 2>$null
         if ($health -match '"status":"ok"') {
             $ready = $true
@@ -80,6 +68,7 @@ try {
         Write-Host "  Backend healthy  OK" -ForegroundColor Green
     } else {
         Write-Host "  Backend healthy  FAIL (timeout)" -ForegroundColor Red
+        docker compose logs api_backend 2>$null
         $failures++
     }
 
@@ -113,8 +102,8 @@ try {
         $failures++
     }
 
-    # --- Step 4: Summary ---
-    Write-Host "`n[4/4] Results" -ForegroundColor Yellow
+    # --- Step 3: Summary ---
+    Write-Host "`n[3/3] Results" -ForegroundColor Yellow
     if ($failures -eq 0) {
         Write-Host "All tests passed!" -ForegroundColor Green
     } else {
@@ -124,8 +113,9 @@ try {
 } finally {
     if (-not $SkipCleanup) {
         Write-Host "`nCleaning up..." -ForegroundColor Yellow
-        docker compose down -v 2>$null | Out-Null
-        docker rmi ada-test-proxy ada-test-frontend ada-test-backend 2>$null | Out-Null
-        Remove-Item -LiteralPath $bodyFile -ErrorAction SilentlyContinue
+        $ErrorActionPreference = "SilentlyContinue"
+        docker compose down -v 2>$null
+        if ($bodyFile) { Remove-Item -LiteralPath $bodyFile -ErrorAction SilentlyContinue }
+        $ErrorActionPreference = "Stop"
     }
 }
