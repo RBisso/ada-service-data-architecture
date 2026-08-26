@@ -251,17 +251,7 @@ powershell -ExecutionPolicy Bypass -File scripts\phase-3-test-manual.ps1
 
 Todos os testes automatizados suportam `-SkipCleanup` para manter os serviços rodando depois dos testes:
 
-### CI/CD Secrets
-
-Required in **Settings > Secrets and variables > Actions**:
-
-| Secret | Description |
-|--------|-------------|
-| `DOCKERHUB_USERNAME` | Docker Hub username |
-| `DOCKERHUB_TOKEN` | Docker Hub access token |
-| `DEPLOY_SSH_PRIVATE_KEY` | SSH key for server deployment |
-
-## Entregáveis
+## Entregaveis
 
 - [x] Phase 0: Project scaffolding
 - [x] Phase 1: Backend API (Java 26 Products CRUD)
