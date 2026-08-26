@@ -1,4 +1,4 @@
-FROM eclipse-temurin:26-jdk AS build
+FROM eclipse-temurin:25-jdk AS build
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/* && \
@@ -13,7 +13,7 @@ RUN mkdir -p out && \
     javac -cp "lib/postgresql.jar" -d out @sources.txt && \
     cp -R src/main/resources/. out/
 
-FROM eclipse-temurin:26-jre-alpine
+FROM eclipse-temurin:25-jre-noble
 WORKDIR /app
 COPY --from=build /app/lib/postgresql.jar lib/
 COPY --from=build /app/out .

@@ -7,10 +7,6 @@ on:
       - develop
       - 'feature/**'
 
-env:
-  REGISTRY: docker.io
-  IMAGE_PREFIX: ${{ secrets.DOCKERHUB_USERNAME }}/ada
-
 jobs:
   build-and-test:
     name: Build, Test & Push
@@ -20,16 +16,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build Docker images
-        run: |
-          docker build -t ${{ env.IMAGE_PREFIX }}-proxy ./nginx
-          docker build -t ${{ env.IMAGE_PREFIX }}-frontend ./frontend
-          docker build -t ${{ env.IMAGE_PREFIX }}-backend ./backend
-
-      - name: Start services
-        run: docker compose up -d
-        env:
-          COMPOSE_BUILD: "false"
+      - name: Build and start services
+        run: docker compose up -d --build
 
       - name: Wait for backend to be healthy
         run: |
@@ -46,18 +34,18 @@ jobs:
           docker compose logs
           exit 1
 
-      - name: Smoke test - health check
+      - name: Smoke test
         run: |
-          echo "Testing /health endpoint..."
-          curl -sf http://localhost/health || (echo "FAIL: /health" && exit 1)
+          echo "Testing /health..."
+          curl -sf http://localhost/health || (echo "FAIL" && exit 1)
 
           echo "Testing GET /api/products..."
-          curl -sf http://localhost/api/products || (echo "FAIL: GET /api/products" && exit 1)
+          curl -sf http://localhost/api/products || (echo "FAIL" && exit 1)
 
           echo "Testing POST /api/products..."
           curl -sf -X POST http://localhost/api/products \
             -H "Content-Type: application/json" \
-            -d '{"name":"CI-Test"}' || (echo "FAIL: POST /api/products" && exit 1)
+            -d '{"name":"CI-Test"}' || (echo "FAIL" && exit 1)
 
           echo "All smoke tests passed!"
 
@@ -76,10 +64,16 @@ jobs:
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
         run: |
           TAG=${{ github.ref_name }}
-          docker tag ${{ env.IMAGE_PREFIX }}-proxy ${{ env.IMAGE_PREFIX }}-proxy:$TAG
-          docker tag ${{ env.IMAGE_PREFIX }}-frontend ${{ env.IMAGE_PREFIX }}-frontend:$TAG
-          docker tag ${{ env.IMAGE_PREFIX }}-backend ${{ env.IMAGE_PREFIX }}-backend:$TAG
+          docker compose build
 
-          docker push ${{ env.IMAGE_PREFIX }}-proxy:$TAG
-          docker push ${{ env.IMAGE_PREFIX }}-frontend:$TAG
-          docker push ${{ env.IMAGE_PREFIX }}-backend:$TAG
+          PROXY_IMG=$(docker compose images proxy -q)
+          FRONTEND_IMG=$(docker compose images frontend -q)
+          BACKEND_IMG=$(docker compose images backend -q)
+
+          docker tag $PROXY_IMG ${{ secrets.DOCKERHUB_USERNAME }}/ada-proxy:$TAG
+          docker tag $FRONTEND_IMG ${{ secrets.DOCKERHUB_USERNAME }}/ada-frontend:$TAG
+          docker tag $BACKEND_IMG ${{ secrets.DOCKERHUB_USERNAME }}/ada-backend:$TAG
+
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ada-proxy:$TAG
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ada-frontend:$TAG
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ada-backend:$TAG
