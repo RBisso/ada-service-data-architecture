@@ -15,6 +15,7 @@ jobs:
       DEPLOY_HOST: 161.35.57.162
       DEPLOY_USER: root
       DEPLOY_PATH: /opt/ada-service-data-architecture
+      SSH_OPTIONS: -o StrictHostKeyChecking=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes
 
     steps:
       - name: Checkout do codigo
@@ -44,12 +45,13 @@ jobs:
 
       - name: Validar conexao SSH
         shell: bash
-        run: ssh -o StrictHostKeyChecking=yes "${DEPLOY_USER}@${DEPLOY_HOST}" "echo Conexao SSH validada com sucesso."
+        run: ssh ${SSH_OPTIONS} "${DEPLOY_USER}@${DEPLOY_HOST}" "echo Conexao SSH validada com sucesso."
 
       - name: Sincronizar arquivos no servidor
         shell: bash
         run: |
           rsync -avz --delete \
+            -e "ssh ${SSH_OPTIONS}" \
             --exclude ".git/" \
             --exclude ".github/" \
             --exclude "ai-log.md" \
@@ -58,4 +60,4 @@ jobs:
       - name: Executar deploy remoto
         shell: bash
         run: |
-          ssh -o StrictHostKeyChecking=yes "${DEPLOY_USER}@${DEPLOY_HOST}" "chmod +x ${DEPLOY_PATH}/scripts/deploy_remote.sh && ${DEPLOY_PATH}/scripts/deploy_remote.sh"
+          ssh ${SSH_OPTIONS} "${DEPLOY_USER}@${DEPLOY_HOST}" "chmod +x ${DEPLOY_PATH}/scripts/deploy_remote.sh && ${DEPLOY_PATH}/scripts/deploy_remote.sh"
