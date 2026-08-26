@@ -51,31 +51,6 @@ jobs:
         if: always()
         run: docker compose down -v
 
-      - name: Log in to Docker Hub
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Push images to Docker Hub
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-        run: |
-          TAG=${{ github.ref_name }}
-          docker compose build
-
-          PROXY_IMG=$(docker compose images proxy -q)
-          FRONTEND_IMG=$(docker compose images frontend -q)
-          BACKEND_IMG=$(docker compose images backend -q)
-
-          docker tag $PROXY_IMG ${{ secrets.DOCKERHUB_USERNAME }}/ada-proxy:$TAG
-          docker tag $FRONTEND_IMG ${{ secrets.DOCKERHUB_USERNAME }}/ada-frontend:$TAG
-          docker tag $BACKEND_IMG ${{ secrets.DOCKERHUB_USERNAME }}/ada-backend:$TAG
-
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ada-proxy:$TAG
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ada-frontend:$TAG
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ada-backend:$TAG
-
   deploy:
     name: Deploy no servidor
     runs-on: ubuntu-latest
