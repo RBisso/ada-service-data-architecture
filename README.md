@@ -30,6 +30,16 @@ End-to-end ecosystem with two areas:
 
 > Documentation in progress - will be completed as phases are implemented.
 
+### CI/CD Secrets
+
+Required in **Settings > Secrets and variables > Actions**:
+
+| Secret | Description |
+|--------|-------------|
+| `DOCKERHUB_USERNAME` | Docker Hub username |
+| `DOCKERHUB_TOKEN` | Docker Hub access token |
+| `DEPLOY_SSH_PRIVATE_KEY` | SSH key for server deployment |
+
 ## Deliverables
 
 - [x] Phase 0: Project scaffolding
@@ -38,5 +48,5 @@ End-to-end ecosystem with two areas:
 - [x] Phase 3: Reverse proxy (Nginx)
 - [x] Phase 4: docker-compose.yml orchestration
 - [ ] Phase 5: Data ecosystem (MovieFlix)
-- [ ] Phase 6: CI/CD (GitHub Actions)
+- [x] Phase 6: CI/CD (GitHub Actions)
 - [ ] Phase 7: DNS bonus + final README
