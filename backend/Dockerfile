@@ -10,7 +10,7 @@ COPY src ./src
 
 RUN mkdir -p out && \
     find src/main/java -name "*.java" > sources.txt && \
-    javac -cp "lib/postgresql.jar" -d out @sources.txt && \
+    javac -J-Xmx256m -cp "lib/postgresql.jar" -d out @sources.txt && \
     cp -R src/main/resources/. out/
 
 FROM eclipse-temurin:26-jre-alpine

@@ -11,4 +11,6 @@ Registro iniciado a partir da `feature/0.6`.
 - Servidor configurado para deploy com Docker.
 - Guia de deploy via GitHub Actions criado.
 - Swagger ajustado para responder no host atual.
+- Deploy remoto ajustado para acompanhar build em background.
+- Build Java ajustado para consumir menos memoria.
 - Fase 5 implementada: Data Ecosystem (MovieFlix) com Data Lake (CSV), ETL (Python), Data Warehouse (`db_dw`) e Data Marts (views SQL).
