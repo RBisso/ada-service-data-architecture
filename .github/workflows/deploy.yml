@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - main
-      - feature/0.6
+      - develop
 
 jobs:
   deploy:
