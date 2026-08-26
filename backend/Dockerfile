@@ -14,6 +14,7 @@ RUN mkdir -p out && \
     cp -R src/main/resources/. out/
 
 FROM eclipse-temurin:25-jre-noble
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /app/lib/postgresql.jar lib/
 COPY --from=build /app/out .
