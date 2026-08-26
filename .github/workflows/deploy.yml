@@ -63,6 +63,7 @@ jobs:
       DEPLOY_PATH: /opt/ada-service-data-architecture
       DEPLOY_LOG_FILE: /var/log/ada-service-data-architecture/deploy.log
       DEPLOY_EXIT_CODE_FILE: /var/run/ada-service-data-architecture/deploy.exit
+      DEPLOY_PID_FILE: /var/run/ada-service-data-architecture/deploy.pid
       SSH_OPTIONS: -o StrictHostKeyChecking=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes
 
     steps:
@@ -108,14 +109,24 @@ jobs:
       - name: Iniciar deploy remoto em background
         shell: bash
         run: |
-          ssh ${SSH_OPTIONS} "${DEPLOY_USER}@${DEPLOY_HOST}" "\
-            mkdir -p /var/log/ada-service-data-architecture /var/run/ada-service-data-architecture && \
-            rm -f ${DEPLOY_EXIT_CODE_FILE} && \
-            chmod +x ${DEPLOY_PATH}/scripts/deploy_remote.sh && \
-            nohup bash -lc 'cd ${DEPLOY_PATH} && ./scripts/deploy_remote.sh' \
-              > ${DEPLOY_LOG_FILE} 2>&1 < /dev/null & \
-            echo \$! > /var/run/ada-service-data-architecture/deploy.pid && \
-            echo Deploy iniciado com PID \$(cat /var/run/ada-service-data-architecture/deploy.pid)"
+          ssh ${SSH_OPTIONS} "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            DEPLOY_PATH="${DEPLOY_PATH}" \
+            DEPLOY_LOG_FILE="${DEPLOY_LOG_FILE}" \
+            DEPLOY_EXIT_CODE_FILE="${DEPLOY_EXIT_CODE_FILE}" \
+            DEPLOY_PID_FILE="${DEPLOY_PID_FILE}" \
+            'bash -se' <<'EOF'
+          set -euo pipefail
+
+          mkdir -p "$(dirname "${DEPLOY_LOG_FILE}")" "$(dirname "${DEPLOY_EXIT_CODE_FILE}")"
+          rm -f "${DEPLOY_EXIT_CODE_FILE}" "${DEPLOY_PID_FILE}"
+          chmod +x "${DEPLOY_PATH}/scripts/deploy_remote.sh"
+
+          nohup bash -lc "cd \"${DEPLOY_PATH}\" && ./scripts/deploy_remote.sh" \
+            > "${DEPLOY_LOG_FILE}" 2>&1 < /dev/null &
+
+          echo $! > "${DEPLOY_PID_FILE}"
+          echo "Deploy iniciado com PID $(cat "${DEPLOY_PID_FILE}")"
+          EOF
 
       - name: Acompanhar deploy remoto
         shell: bash
