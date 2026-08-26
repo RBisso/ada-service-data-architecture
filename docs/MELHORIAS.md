@@ -10,3 +10,4 @@ Registro iniciado a partir da `feature/0.6`.
 - Workflow de deploy via GitHub Actions criado.
 - Servidor configurado para deploy com Docker.
 - Guia de deploy via GitHub Actions criado.
+- Fase 5 implementada: Data Ecosystem (MovieFlix) com Data Lake (CSV), ETL (Python), Data Warehouse (`db_dw`) e Data Marts (views SQL).

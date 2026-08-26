@@ -122,6 +122,7 @@ Esta aplicação vai estar disponível em:
 | App (Frontend + API) | http://localhost |
 | Health check | http://localhost/health |
 | OLTP Database | localhost:5432 |
+| Data Warehouse (MovieFlix) | localhost:5433 |
 
 ### Para execução
 
@@ -156,6 +157,48 @@ curl http://localhost/api/products
 ```
 Response: `[{"id":1,"name":"Notebook"},{"id":2,"name":"Mouse"}]`
 
+## Data Ecosystem (MovieFlix)
+
+Arquitetura 3-layer: **Data Lake** (CSV) -> **Data Warehouse** (PostgreSQL) -> **Data Marts** (SQL views).
+
+| Layer | Component | Location |
+|-------|-----------|----------|
+| Data Lake | `movies.csv`, `users.csv`, `ratings.csv` | `data-ecosystem/datalake/` |
+| ETL | `load_dw.py` (Python + psycopg2) | `data-ecosystem/etl/` |
+| Data Warehouse | `db_dw` (PostgreSQL 15, `movieflix_dw`) | `data-ecosystem/sql/01_dw_schema.sql` |
+| Data Marts | 3 business views | `data-ecosystem/sql/02_datamarts.sql` |
+| Analytics | 3 business queries | `data-ecosystem/sql/03_analytics.sql` |
+
+### Modelo (Star Schema)
+
+- `dim_movies`, `dim_users`, `dim_genres`, `movie_genres` (ponte), `fact_ratings`.
+
+### Data Marts (views)
+
+- `v_top10_movies_by_genre` — Top 10 filmes com maior nota por gênero.
+- `v_avg_rating_by_age_group` — Nota média por faixa etária.
+- `v_ratings_by_country` — Número de avaliações por país.
+
+### Execução
+
+O ETL roda automaticamente como um container one-shot ao executar `docker compose up`. Para recarregar os dados manualmente:
+
+```bash
+docker compose run --rm etl
+```
+
+Para rodar as consultas analíticas e ver os resultados:
+
+```bash
+docker exec -it db_dw psql -U dw_user -d movieflix_dw -c "\i /sql/03_analytics.sql"
+```
+
+Ou consultar as views diretamente:
+
+```bash
+docker exec db_dw psql -U dw_user -d movieflix_dw -c "SELECT * FROM v_ratings_by_country;"
+```
+
 ## Scripts de Teste
 
 Scripts de testes manuais e automatizados podem ser encontrados na pasta `scripts/`. Todos os scripts gerenciam setup, teste e cleanup.
@@ -184,6 +227,14 @@ Executa todos os serviços via Docker Compose (proxy, frontend, backend, Postgre
 powershell -ExecutionPolicy Bypass -File scripts\phase-3-test.ps1
 ```
 
+### Fase 5 — Data Ecosystem (MovieFlix)
+
+Sobe todos os serviços (incluindo `db_dw` e `etl`), valida o carregamento do Data Warehouse, a criação das views e os resultados das consultas analíticas.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\phase-5-test.ps1
+```
+
 ### Manual tests (browser)
 
 Inicializa todos os serviços e disponibiliza o serviço em http://localhost para fins de testes manuais no browser. Precione qualquer tecla no terminal para encerrar o processo e iniciar o processo de cleanup.
@@ -207,6 +258,6 @@ Todos os testes automatizados suportam `-SkipCleanup` para manter os serviços r
 - [x] Phase 2: Frontend (HTML/JS)
 - [x] Phase 3: Reverse proxy (Nginx)
 - [x] Phase 4: docker-compose.yml orchestration
-- [ ] Phase 5: Data ecosystem (MovieFlix)
+- [x] Phase 5: Data ecosystem (MovieFlix)
 - [ ] Phase 6: CI/CD (GitHub Actions)
 - [ ] Phase 7: DNS bonus + final README
