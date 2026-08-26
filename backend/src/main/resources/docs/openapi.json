@@ -7,8 +7,8 @@
   },
   "servers": [
     {
-      "url": "http://localhost",
-      "description": "Ambiente local via Nginx"
+      "url": "/",
+      "description": "Ambiente atual via proxy"
     }
   ],
   "tags": [
