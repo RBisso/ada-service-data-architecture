@@ -1,0 +1,37 @@
+services:
+  db_oltp:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: app_pass
+      POSTGRES_DB: products_db
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app_user -d products_db"]
+      interval: 2s
+      retries: 10
+
+  backend:
+    build: ../../backend
+    environment:
+      DB_HOST: db_oltp
+      DB_PORT: "5432"
+      DB_USER: app_user
+      DB_PASSWORD: app_pass
+      DB_NAME: products_db
+      PORT: "8080"
+    depends_on:
+      db_oltp:
+        condition: service_healthy
+
+  frontend:
+    build: ../../frontend
+
+  proxy:
+    build: ../../nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend

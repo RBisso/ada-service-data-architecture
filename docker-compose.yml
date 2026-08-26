@@ -1,0 +1,112 @@
+services:
+  proxy:
+    build: ./nginx
+    container_name: reverse_proxy
+    ports:
+      - "80:80"
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  frontend:
+    build: ./frontend
+    container_name: web_frontend
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  backend:
+    build: ./backend
+    container_name: api_backend
+    environment:
+      - DB_HOST=db_oltp
+      - DB_PORT=5432
+      - DB_USER=app_user
+      - DB_PASSWORD=app_pass
+      - DB_NAME=products_db
+      - PORT=8080
+    depends_on:
+      db_oltp:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
+    networks:
+      - app-network
+
+  db_oltp:
+    image: postgres:15-alpine
+    container_name: db_oltp
+    environment:
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: app_pass
+      POSTGRES_DB: products_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - oltp_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app_user -d products_db"]
+      interval: 2s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  db_dw:
+    image: postgres:15-alpine
+    container_name: db_dw
+    environment:
+      POSTGRES_USER: dw_user
+      POSTGRES_PASSWORD: dw_pass
+      POSTGRES_DB: movieflix_dw
+    ports:
+      - "5433:5432"
+    volumes:
+      - dw_data:/var/lib/postgresql/data
+      - ./data-ecosystem/sql:/sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dw_user -d movieflix_dw"]
+      interval: 2s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  etl:
+    build: ./data-ecosystem/etl
+    container_name: movieflix_etl
+    environment:
+      - DB_HOST=db_dw
+      - DB_PORT=5432
+      - DB_USER=dw_user
+      - DB_PASSWORD=dw_pass
+      - DB_NAME=movieflix_dw
+      - DATALAKE_DIR=/datalake
+      - SQL_DIR=/sql
+    volumes:
+      - ./data-ecosystem/datalake:/datalake:ro
+      - ./data-ecosystem/sql:/sql:ro
+    depends_on:
+      db_dw:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  oltp_data:
+  dw_data:
