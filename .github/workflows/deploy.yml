@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Checkout do codigo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Configurar chave SSH
         shell: bash
