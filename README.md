@@ -259,5 +259,5 @@ Todos os testes automatizados suportam `-SkipCleanup` para manter os serviços r
 - [x] Phase 3: Reverse proxy (Nginx)
 - [x] Phase 4: docker-compose.yml orchestration
 - [x] Phase 5: Data ecosystem (MovieFlix)
-- [ ] Phase 6: CI/CD (GitHub Actions)
+- [x] Phase 6: CI/CD (GitHub Actions)
 - [ ] Phase 7: DNS bonus + final README
