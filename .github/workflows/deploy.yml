@@ -6,6 +6,76 @@ on:
     branches:
       - main
 jobs:
+
+  build-and-test:
+    name: Build, Test & Push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and start services
+        run: docker compose up -d --build
+
+      - name: Wait for backend to be healthy
+        run: |
+          echo "Waiting for backend health check..."
+          for i in $(seq 1 40); do
+            if docker exec api_backend curl -sf http://localhost:8080/health 2>/dev/null | grep -q '"status":"ok"'; then
+              echo "Backend is healthy!"
+              exit 0
+            fi
+            echo "Attempt $i/40 - waiting..."
+            sleep 3
+          done
+          echo "Backend failed to become healthy"
+          docker compose logs api_backend
+          exit 1
+
+      - name: Smoke test
+        run: |
+          echo "Testing /health..."
+          curl -sf http://localhost/health || (echo "FAIL" && exit 1)
+
+          echo "Testing GET /api/products..."
+          curl -sf http://localhost/api/products || (echo "FAIL" && exit 1)
+
+          echo "Testing POST /api/products..."
+          curl -sf -X POST http://localhost/api/products \
+            -H "Content-Type: application/json" \
+            -d '{"name":"CI-Test"}' || (echo "FAIL" && exit 1)
+
+          echo "All smoke tests passed!"
+
+      - name: Stop services
+        if: always()
+        run: docker compose down -v
+
+      - name: Log in to Docker Hub
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push images to Docker Hub
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+        run: |
+          TAG=${{ github.ref_name }}
+          docker compose build
+
+          PROXY_IMG=$(docker compose images proxy -q)
+          FRONTEND_IMG=$(docker compose images frontend -q)
+          BACKEND_IMG=$(docker compose images backend -q)
+
+          docker tag $PROXY_IMG ${{ secrets.DOCKERHUB_USERNAME }}/ada-proxy:$TAG
+          docker tag $FRONTEND_IMG ${{ secrets.DOCKERHUB_USERNAME }}/ada-frontend:$TAG
+          docker tag $BACKEND_IMG ${{ secrets.DOCKERHUB_USERNAME }}/ada-backend:$TAG
+
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ada-proxy:$TAG
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ada-frontend:$TAG
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ada-backend:$TAG
+
   deploy:
     name: Deploy no servidor
     runs-on: ubuntu-latest
